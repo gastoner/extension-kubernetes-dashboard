@@ -114,6 +114,7 @@ test('input should call findNext on search addon', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for search to be visible
@@ -154,6 +155,7 @@ test('key Enter should call findNext with incremental', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for search to be visible
@@ -194,6 +196,7 @@ test('arrow down should call findNext', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for search to be visible and enter search term
@@ -239,6 +242,7 @@ test('arrow up should call findPrevious', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for search to be visible and enter search term
@@ -283,6 +287,7 @@ test('ctrl+F should focus input', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for showSearch to become true
@@ -313,6 +318,7 @@ test('Escape key should close search via terminal key handler', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for search to be visible
@@ -323,17 +329,20 @@ test('Escape key should close search via terminal key handler', async () => {
 
   // Now press Escape via the terminal key handler
   const preventDefaultMock = vi.fn();
+  const stopPropagationMock = vi.fn();
   const result = capturedKeyHandler!({
     type: 'keydown',
     ctrlKey: false,
     metaKey: false,
     key: 'Escape',
     preventDefault: preventDefaultMock,
+    stopPropagation: stopPropagationMock,
   } as unknown as KeyboardEvent);
 
   // Should return false to prevent terminal from handling it
   expect(result).toBe(false);
   expect(preventDefaultMock).toHaveBeenCalled();
+  expect(stopPropagationMock).toHaveBeenCalled();
 
   // Wait for search to be hidden
   await vi.waitFor(() => {
@@ -363,6 +372,7 @@ test('Close button should close search', async () => {
     metaKey: false,
     key: 'f',
     preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
   } as unknown as KeyboardEvent);
 
   // Wait for search to be visible

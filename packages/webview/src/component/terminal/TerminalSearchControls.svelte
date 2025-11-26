@@ -31,45 +31,53 @@ function isFindShortcut(event: KeyboardEvent): boolean {
   return platformName === 'darwin' ? event.metaKey && eventKey === 'f' : event.ctrlKey && eventKey === 'f';
 }
 
+function onKeyPressed(event: KeyboardEvent): boolean {
+  if (isFindShortcut(event)) {
+    event.preventDefault();
+    event.stopPropagation();
+    showSearch = true;
+    tick()
+      .then(() => input?.focus())
+      .catch(console.error);
+    return false;
+  } else if (event.key === 'Escape' && showSearch) {
+    event.preventDefault();
+    event.stopPropagation();
+    closeSearch();
+    return false; 
+  }
+  return true;
+}
+
 onMount(async () => {
   searchAddon = new SearchAddon();
   searchAddon.activate(terminal);
 
   platformName = await systemApi.getPlatformName();
 
+  // Add global keyboard listener so Ctrl+F works without clicking terminal first
+  document.addEventListener('keydown', onKeyPressed);
+
   // TODO onDidChangeResults doesn't seem to be working even if i add decorations...
 
   // Make sure the terminal doesn't intercept Cmd+F (Mac) or Ctrl+F (Windows/Linux)
-  terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-    if (event.type === 'keydown' && isFindShortcut(event)) {
-      event.preventDefault();
-      showSearch = true;
-      tick()
-        .then(() => input?.focus())
-        .catch(console.error);
-      return false;
-    } else if (event.type === 'keydown' && event.key === 'Escape' && showSearch) {
-      event.preventDefault();
-      closeSearch();
-      return false;
-    }
-    return true;
+  terminal.attachCustomKeyEventHandler((event: KeyboardEvent): boolean => {
+    return onKeyPressed(event);
   });
 });
 
 onDestroy(() => {
   searchAddon?.dispose();
+  document.removeEventListener('keydown', onKeyPressed);
 });
 
-function onKeyPressed(event: KeyboardEvent): void {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    onSearchNext(true);
-  } else if (event.key === 'Escape') {
-    event.preventDefault();
-    event.stopPropagation();
-    closeSearch();
-  }
+function keydownAction(element: HTMLElement) {
+  element?.addEventListener('keydown', onKeyPressed);
+  return {
+    destroy() {
+      element?.removeEventListener('keydown', onKeyPressed);
+    },
+  };
 }
 
 function onSearchNext(incremental = false): void {
@@ -111,12 +119,11 @@ function closeSearch(): void {
     {#if searchTerm && !hasMatches}
       <span class="text-sm text-(--pd-content-text) mr-2"> No results </span>
     {/if}
-    <div class="w-200px mx-4">
+    <div class="w-200px mx-4" use:keydownAction>
       <Input
         bind:element={input}
         placeholder="Find"
         aria-label="Find"
-        onkeypress={onKeyPressed}
         oninput={onSearch}
         value={searchTerm} />
     </div>
